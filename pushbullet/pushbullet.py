@@ -32,7 +32,7 @@ class Pushbullet(object):
     def _get_data(self, url):
         resp = self._session.get(url)
 
-        if resp.status_code == 401:
+        if resp.status_code != requests.codes.ok:
             raise InvalidKeyError()
 
         return resp.json()
@@ -169,7 +169,7 @@ class Pushbullet(object):
             else:
                 get_more_pushes = False
 
-        return True, pushes_list
+        return pushes_list
 
     def dismiss_push(self, iden):
         data = {"dismissed": True}
@@ -257,7 +257,7 @@ class Pushbullet(object):
             "push": {
                 "type": "messaging_extension_reply",
                 "package_name": "com.pushbullet.android",
-                "source_user_iden": self.user_info,
+                "source_user_iden": self.user_info['iden'],
                 "target_device_iden": device.device_iden,
                 "conversation_iden": number,
                 "message": message
