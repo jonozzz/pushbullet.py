@@ -27,11 +27,12 @@ class Pushbullet(object):
         self._session.headers.update(self._json_header)
 
         self.refresh()
+        self._source = None
 
     def _get_data(self, url):
         resp = self._session.get(url)
 
-        if resp.status_code != requests.codes.ok:
+        if resp.status_code == 401:
             raise InvalidKeyError()
 
         return resp.json()
@@ -87,6 +88,9 @@ class Pushbullet(object):
 
         return data
 
+    def source(self, device):
+        self._source = device
+    
     def new_device(self, nickname):
         data = {"nickname": nickname, "type": "stream"}
         r = self._session.post(self.DEVICES_URL, data=json.dumps(data))
@@ -165,7 +169,7 @@ class Pushbullet(object):
             else:
                 get_more_pushes = False
 
-        return pushes_list
+        return True, pushes_list
 
     def dismiss_push(self, iden):
         data = {"dismissed": True}
@@ -238,6 +242,8 @@ class Pushbullet(object):
         return self._push(data)
 
     def _push(self, data):
+        if self._source:
+            data["source_device_iden"] = self._source.device_iden
         r = self._session.post(self.PUSH_URL, data=json.dumps(data))
 
         if r.status_code == requests.codes.ok:
@@ -251,7 +257,7 @@ class Pushbullet(object):
             "push": {
                 "type": "messaging_extension_reply",
                 "package_name": "com.pushbullet.android",
-                "source_user_iden": self.user_info['iden'],
+                "source_user_iden": self.user_info,
                 "target_device_iden": device.device_iden,
                 "conversation_iden": number,
                 "message": message
